@@ -4,9 +4,18 @@
 <h1 align="center">MOT</h1>
 <p align="center"><strong>Say it. Find it later.</strong></p>
 <p align="center">Voice dictation and searchable meeting transcripts for macOS.</p>
-<p align="center"><a href="#see-it-in-action">See it in action</a> · <a href="#transcription-engines">Transcription engines</a> · <a href="#architecture">Architecture</a> · <a href="#availability">Private preview</a></p>
 <p align="center">
-  <img src="assets/mot-banner.jpg" width="620" alt="A silver ribbon passes through a dark slit and comes out folded.">
+  <img alt="macOS on Apple silicon" src="assets/badges/macos.png" height="20">
+  <img alt="Private preview" src="assets/badges/preview.png" height="20">
+  <img alt="Swift" src="assets/badges/swift.png" height="20">
+  <img alt="Electron" src="assets/badges/electron.png" height="20">
+  <img alt="SQLite" src="assets/badges/sqlite.png" height="20">
+  <img alt="Local Whisper" src="assets/badges/whisper.png" height="20">
+  <img alt="Google Gemini" src="assets/badges/gemini.png" height="20">
+</p>
+<p align="center"><a href="#see-it-in-action">See it in action</a> · <a href="#transcription-engines">Transcription engines</a> · <a href="#architecture">Architecture</a> · <a href="docs/blueprint.md">Blueprint</a></p>
+<p align="center">
+  <img src="assets/mot-banner.jpg" width="100%" alt="A silver ribbon passes through a dark slit and comes out folded.">
 </p>
 
 ## See it in action
@@ -73,7 +82,37 @@ flowchart LR
 - **Meeting storage and search.** The local SQLite store keeps notes and timestamped transcript segments. An FTS5 index supports library queries. Separate read workers keep search and history queries off the main process.
 - **Text delivery.** Dictation checks the destination before pasting. The result stays in history for manual copy when the app cannot safely return text to the original field.
 
-[Read the architecture and data-flow notes →](docs/architecture.md)
+### Architecture as pseudocode
+
+These examples describe the control flow. For the runtime boundaries, data handling, and a sequence diagram, see the [architecture notes](docs/architecture.md).
+
+```python
+def finish_dictation(session):
+    if session.engine == "google":
+        draft = session.google_stream.finish()
+    else:
+        draft = whisper.transcribe(session.audio)
+
+    text = apply_selected_style(draft, session)
+    history.save(text)
+    if session.started_from_shortcut and destination_is_still_focused(session.target):
+        paste_into_original_field(text, session.target)
+
+
+def finish_meeting(recording):
+    segments = []
+    for track in recording.microphone_and_system_tracks:
+        segments.extend(transcribe_on_device(track))
+    transcript = order_by_timestamp(segments)
+    library.save(recording.notes, transcript)
+    return transcript
+```
+
+[Read the product blueprint →](docs/blueprint.md)
+
+## For MCP clients
+
+The private preview includes a local, opt-in MCP server over standard input and output. Connected clients can search saved dictations, list meetings, and read the chosen transcript or saved summary. See the [read-only tool flow](docs/architecture.md#local-mcp-interface).
 
 ## Availability
 

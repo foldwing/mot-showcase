@@ -1,6 +1,6 @@
 # MOT architecture
 
-[← Back to MOT](../README.md)
+[Product overview](../README.md) · [Product blueprint](blueprint.md)
 
 MOT has two audio pipelines with different lifetimes. Dictation is a short session that usually ends in another app's text field. A meeting is a recording with two audio tracks, notes, timestamped excerpts, and a durable record that can be searched later.
 
@@ -14,6 +14,7 @@ MOT has two audio pipelines with different lifetimes. Dictation is a short sessi
 | Local recognition | Whisper runs locally. The meeting path can use a Core ML recognizer when ready and can fall back to Whisper for final transcription. Live drafts depend on the Core ML recognizer being available. |
 | Google Gemini API | Optional streaming dictation, separate grammar review, and optional meeting summaries. The user's Google project provides the API key and determines usage limits. |
 | SQLite and read workers | Local state for dictation and meetings. Dedicated workers handle history and meeting-library reads. |
+| Local MCP server | Opt-in standard input/output interface. A connected client can read saved dictation and meeting text through read-only database connections. |
 
 ## Dictation
 
@@ -24,11 +25,50 @@ MOT has two audio pipelines with different lifetimes. Dictation is a short sessi
 
 ## Meetings
 
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as MOT desktop
+    participant Capture as Swift audio capture
+    participant Local as Local recognizer
+    participant Store as SQLite library
+    participant Google as Gemini API
+    User->>App: Start recording
+    App->>Capture: Capture microphone and system audio
+    Capture-->>App: Audio tracks
+    App->>Local: Transcribe tracks on device
+    Local-->>App: Timestamped segments
+    App->>Store: Save meeting and transcript
+    User->>App: Search or export
+    App->>Store: Read matching segments
+    Store-->>App: Meeting and excerpts
+    opt User confirms summary
+        App->>Google: Send transcript text
+        Google-->>App: Return summary
+    end
+```
+
 1. The user creates a meeting note and starts recording. Capture preserves the microphone and system audio tracks separately.
 2. The meeting recognizer processes the tracks locally. The app uses the channel to label timestamped segments **Me** and **Others**. Multiple remote participants can share the **Others** channel.
 3. Completed segments and meeting notes live in SQLite. The library indexes text with FTS5 and can page through results using a cursor. A read worker serves library queries separately from capture and writes.
 4. A user can search across meetings or within one transcript, copy an excerpt, and export Markdown. The full meeting Markdown export includes the transcript, notes, and available summary content.
 5. To generate a summary, the user confirms a separate Google request from the meeting. MOT sends transcript text for the summary. Summary quotations are checked against source excerpts before the result is saved.
+
+### How library search works
+
+The query can combine search text, a person filter and a folder filter. The FTS5 trigram index narrows candidates for eligible queries, then the reader checks the canonical text for a match. Results include an excerpt when one is available. A cursor carries the position for the next page.
+
+## Local MCP interface
+
+An MCP client connected from the desktop preview can follow these read-only flows.
+
+| Task | Tool sequence |
+| --- | --- |
+| Retrieve a dictation | Use `search_dictations` and pass the chosen item ID to `get_dictation`. |
+| Read a meeting | Use `list_meetings` for a day, choose a result and call `get_meeting_transcript`. Follow the transcript cursor for additional excerpts. |
+| Read a saved summary | Use the same meeting ID with `get_meeting_summary`. |
+
+The server reads from the local profile. A connected client can receive the text it requests, so connect clients you trust to read saved dictations and meetings.
 
 ## Data handling by operation
 
