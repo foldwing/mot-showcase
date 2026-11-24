@@ -13,7 +13,7 @@
   <img alt="Local Whisper" src="assets/badges/whisper.png" height="20">
   <img alt="Google Gemini" src="assets/badges/gemini.png" height="20">
 </p>
-<p align="center"><a href="#see-it-in-action">See it in action</a> · <a href="#transcription-engines">Transcription engines</a> · <a href="#architecture">Architecture</a> · <a href="docs/blueprint.md">Blueprint</a></p>
+<p align="center"><a href="#see-it-in-action">See it in action</a> · <a href="#transcription-engines">Engines</a> · <a href="#architecture">Architecture</a> · <a href="docs/workflows.md">Walkthrough</a> · <a href="docs/blueprint.md">Blueprint</a></p>
 <p align="center">
   <img src="assets/mot-banner.jpg" width="100%" alt="A silver ribbon passes through a dark slit and comes out folded.">
 </p>
@@ -34,9 +34,13 @@ Start a note, write an agenda, and record. The Mac's system audio and your micro
 
 ![MOT Notetaker with a meeting library, search across notes and transcripts, and a preview of the fictional Lunar Garden meeting](assets/library.jpg)
 
+In the demo, searching for `Friday` returns the matching excerpt at `00:15`.
+
+![MOT Notetaker showing the Friday search result and the matching Lunar Garden excerpt at 00:15](assets/meeting-search.jpg)
+
 ### Find the line, then take it with you
 
-Within a meeting, search the transcript or filter it by **Me** and **Others**. Copy an excerpt, copy the full transcript, or export Markdown. The preview also supports a full meeting export that gathers notes and available summary sections with the transcript.
+Within a meeting, search the transcript or filter it by **Me** and **Others**. Copy an excerpt or export the transcript as Markdown. The separate full meeting export saves a JSON record with notes, transcript, and any saved summary.
 
 ![MOT transcript of the fictional Lunar Garden meeting with timestamped Me and Others excerpts, transcript search, and copy and export controls](assets/transcript.jpg)
 
@@ -61,22 +65,22 @@ Choose **Google** or **Local Whisper** in **Settings → Transcription**. Dictat
 | Snippets | Expand a spoken shortcut into reusable text. |
 | Style | Choose Verbatim, Clean, or Smart formatting for dictation. |
 | Technical text | Keep recognition closer to the literal wording in supported terminal apps. |
+| Transforms | Reformat existing text on the Mac. |
+| Scratchpad | Keep drafts and microphone voice notes. |
+| Insights | Review dictation speed and usage from local history. |
+
+![MOT Style settings showing Verbatim, Clean and Smart modes and app-specific style controls](assets/style.jpg)
+
+[Walk through capture, search, export and recovery →](docs/workflows.md)
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  Mic["Dictation mic"] --> Route["Selected dictation engine"]
-  Route --> Whisper["Local Whisper"]
-  Route --> Gemini["Google Gemini API"]
-  Whisper --> Text["Text in focused app or history"]
-  Gemini --> Text
-  Tracks["Meeting mic + system audio"] --> Local["Local meeting recognizer"]
-  Local --> Library["Timestamped transcript in SQLite"]
-  Library --> Search["Search, copy, Markdown export"]
-  Library --> Consent["Explicit summary confirmation"]
-  Consent --> Summary["Google Gemini summary"]
-```
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/mot-architecture-dark.png">
+  <img alt="MOT architecture. React communicates with Electron through preload IPC. Dictation uses local Whisper or Gemini and returns text to the original field or SQLite history. Meetings record two native audio tracks, transcribe locally, and save to SQLite for search, Markdown export, and optional read-only MCP. Gemini summary receives transcript text on confirmation." src="assets/mot-architecture-light.png" width="100%">
+</picture>
+
+[Full-size dark diagram](assets/mot-architecture-dark.png) · [Full-size light diagram](assets/mot-architecture-light.png) · [Editable Excalidraw source](docs/mot-architecture.excalidraw)
 
 - **Desktop and capture.** Electron and React render the app. The Electron main process coordinates capture, engine selection, persistence, and delivery. Swift helpers provide native macOS integration, including meeting audio capture via ScreenCaptureKit.
 - **Meeting storage and search.** The local SQLite store keeps notes and timestamped transcript segments. An FTS5 index supports library queries. Separate read workers keep search and history queries off the main process.
@@ -117,4 +121,10 @@ The private preview includes a local, opt-in MCP server over standard input and 
 ## Availability
 
 MOT is in private preview for Apple silicon. Meeting recording requires macOS 15 or later and the corresponding macOS capture permissions. This repository documents the app and its design.
+
+| Document | Contents |
+| --- | --- |
+| [Walkthrough](docs/workflows.md) | Dictation, meeting search, writing tools and troubleshooting |
+| [Architecture](docs/architecture.md) | Runtime boundaries, storage, cloud requests and MCP |
+| [Blueprint](docs/blueprint.md) | User flows, design decisions and preview status |
 

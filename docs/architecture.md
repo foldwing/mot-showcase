@@ -4,6 +4,8 @@
 
 MOT has two audio pipelines with different lifetimes. Dictation is a short session that usually ends in another app's text field. A meeting is a recording with two audio tracks, notes, timestamped excerpts, and a durable record that can be searched later.
 
+[Full architecture diagram](../README.md#architecture) · [Editable Excalidraw source](mot-architecture.excalidraw)
+
 ## Runtime boundaries
 
 | Layer | Responsibility |
@@ -25,33 +27,10 @@ MOT has two audio pipelines with different lifetimes. Dictation is a short sessi
 
 ## Meetings
 
-```mermaid
-sequenceDiagram
-    actor User
-    participant App as MOT desktop
-    participant Capture as Swift audio capture
-    participant Local as Local recognizer
-    participant Store as SQLite library
-    participant Google as Gemini API
-    User->>App: Start recording
-    App->>Capture: Capture microphone and system audio
-    Capture-->>App: Audio tracks
-    App->>Local: Transcribe tracks on device
-    Local-->>App: Timestamped segments
-    App->>Store: Save meeting and transcript
-    User->>App: Search or export
-    App->>Store: Read matching segments
-    Store-->>App: Meeting and excerpts
-    opt User confirms summary
-        App->>Google: Send transcript text
-        Google-->>App: Return summary
-    end
-```
-
 1. The user creates a meeting note and starts recording. Capture preserves the microphone and system audio tracks separately.
 2. The meeting recognizer processes the tracks locally. The app uses the channel to label timestamped segments **Me** and **Others**. Multiple remote participants can share the **Others** channel.
 3. Completed segments and meeting notes live in SQLite. The library indexes text with FTS5 and can page through results using a cursor. A read worker serves library queries separately from capture and writes.
-4. A user can search across meetings or within one transcript, copy an excerpt, and export Markdown. The full meeting Markdown export includes the transcript, notes, and available summary content.
+4. A user can search across meetings or within one transcript, copy an excerpt, and export the transcript as Markdown. Full meeting export uses JSON and includes the transcript, notes, and available summary content.
 5. To generate a summary, the user confirms a separate Google request from the meeting. MOT sends transcript text for the summary. Summary quotations are checked against source excerpts before the result is saved.
 
 ### How library search works

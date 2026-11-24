@@ -1,6 +1,6 @@
 # MOT product blueprint
 
-[Product overview](../README.md) · [Architecture](architecture.md)
+[Product overview](../README.md) · [Architecture](architecture.md) · [Walkthrough](workflows.md)
 
 MOT gives speech two destinations. Dictation sends a short thought to the text field that needed it. The Notetaker turns a meeting into a record you can find and quote later.
 
@@ -19,7 +19,7 @@ MOT gives speech two destinations. Dictation sends a short thought to the text f
 | Record | Create a note and start recording. | Keep microphone input and Mac audio on separate tracks. |
 | Review | Open timed excerpts grouped by Me and Others. | Run speech recognition locally and save segments with timestamps and source channels. |
 | Find | Search across saved meetings or inside one transcript. | Query the local library and return matching meetings and excerpts. |
-| Export | Copy an excerpt or export Markdown. | Assemble the transcript and, for a full meeting export, the saved notes and available summary sections. |
+| Export | Copy an excerpt, export the transcript as Markdown, or export the whole meeting as JSON. | The JSON record includes the transcript, saved notes and any saved summary. |
 | Summarize | Confirm the optional Google summary request. | Send transcript text to Google on that request and validate returned quotations against the transcript. |
 
 ## Design decisions
@@ -33,7 +33,7 @@ MOT gives speech two destinations. Dictation sends a short thought to the text f
 
 ## Preview status
 
-The repository shows the app's workflow and architecture. The four screenshots come from an isolated MOT profile with fictional data. The library smoke test searched for `Friday` and returned the Lunar Garden excerpt at `00:15`.
+The repository shows the app's workflow and architecture. The screenshots come from an isolated MOT profile with fictional data. The library smoke test searched for `Friday` and returned the Lunar Garden excerpt at `00:15`.
 
 | Area | Status |
 | --- | --- |
